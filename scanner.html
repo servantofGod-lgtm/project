@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <title>Scanner QR Santri</title>
+
+  <!-- HTML5 QR CODE -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 3px 15px rgba(0,0,0,.10);
+    }
+
+    h2 {
+      text-align: center;
+      margin-top: 0;
+    }
+
+    #reader {
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+
+    #btnMulai {
+      background: #198754;
+      color: white;
+    }
+
+    #btnStop {
+      background: #dc3545;
+      color: white;
+      display: none;
+    }
+
+    #hasil {
+      margin-top: 20px;
+    }
+
+    .info {
+      background: #e7f3ff;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .success {
+      background: #d4edda;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .danger {
+      background: #f8d7da;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .warning {
+      background: #fff3cd;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .id-santri {
+      font-size: 24px;
+      font-weight: bold;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+  <h2>📷 SCANNER QR SANTRI</h2>
+
+  <div class="info">
+
+    Arahkan kamera ke QR Code santri.
+
+    <br><br>
+
+    QR Code cukup berisi ID, misalnya:
+
+    <div class="id-santri">
+      S001
+    </div>
+
+  </div>
+
+
+  <!-- TEMPAT SCANNER -->
+
+  <div id="reader"></div>
+
+
+  <button
+    id="btnMulai"
+    onclick="mulaiScanner()"
+  >
+    📷 MULAI SCAN
+  </button>
+
+
+  <button
+    id="btnStop"
+    onclick="stopScanner()"
+  >
+    ⛔ TUTUP KAMERA
+  </button>
+
+
+  <div id="hasil"></div>
+
+</div>
+
+
+<script>
+
+  // ==================================================
+  // URL WEB APP PERIZINAN
+  // ==================================================
+
+  const APP_URL =
+    'GANTI_DENGAN_URL_WEB_APP_ANDA';
+
+
+  // ==================================================
+  // VARIABEL SCANNER
+  // ==================================================
+
+  let scanner = null;
+
+  let scannerAktif = false;
+
+  let sudahScan = false;
+
+
+  // ==================================================
+  // TAMPILKAN HASIL
+  // ==================================================
+
+  function tampilkanHasil(html) {
+
+    document.getElementById('hasil').innerHTML =
+      html;
+
+  }
+
+
+  // ==================================================
+  // MULAI SCANNER
+  // ==================================================
+
+  async function mulaiScanner() {
+
+    if (scannerAktif) {
+      return;
+    }
+
+    sudahScan = false;
+
+    tampilkanHasil(
+
+      '<div class="warning">' +
+      '⏳ Membuka kamera...' +
+      '</div>'
+
+    );
+
+
+    try {
+
+      scanner =
+        new Html5Qrcode('reader');
+
+
+      // ==============================================
+      // DAPATKAN DAFTAR KAMERA
+      // ==============================================
+
+      const cameras =
+        await Html5Qrcode.getCameras();
+
+
+      if (
+        !cameras ||
+        cameras.length === 0
+      ) {
+
+        throw new Error(
+          'Tidak ada kamera yang ditemukan.'
+        );
+
+      }
+
+
+      // ==============================================
+      // PILIH KAMERA BELAKANG
+      // ==============================================
+
+      let cameraId =
+        cameras[0].id;
+
+
+      for (
+        let i = 0;
+        i < cameras.length;
+        i++
+      ) {
+
+        const label =
+          (
+            cameras[i].label || ''
+          ).toLowerCase();
+
+
+        if (
+
+          label.includes('back') ||
+          label.includes('rear') ||
+          label.includes('environment') ||
+          label.includes('belakang')
+
+        ) {
+
+          cameraId =
+            cameras[i].id;
+
+          break;
+
+        }
+
+      }
+
+
+      // ==============================================
+      // START SCANNER
+      // ==============================================
+
+      await scanner.start(
+
+        cameraId,
+
+        {
+
+          fps: 10,
+
+          qrbox: {
+            width: 250,
+            height: 250
+          }
+
+        },
+
+
+        // ============================================
+        // QR BERHASIL DIBACA
+        // ============================================
+
+        function(decodedText) {
+
+          if (sudahScan) {
+            return;
+          }
+
+          sudahScan = true;
+
+
+          // ==========================================
+          // AMBIL ID
+          // ==========================================
+
+          const idSantri =
+            decodedText.trim();
+
+
+          if (!idSantri) {
+
+            sudahScan = false;
+
+            return;
+
+          }
+
+
+          // ==========================================
+          // TAMPILKAN HASIL
+          // ==========================================
+
+          tampilkanHasil(
+
+            '<div class="success">' +
+
+            '<b>✅ QR BERHASIL DIBACA</b>' +
+
+            '<p>' +
+
+            '<b>ID Santri:</b> ' +
+
+            idSantri +
+
+            '</p>' +
+
+            '<p>' +
+
+            'Membuka sistem perizinan...' +
+
+            '</p>' +
+
+            '</div>'
+
+          );
+
+
+          // ==========================================
+          // STOP KAMERA
+          // ==========================================
+
+          stopScanner();
+
+
+          // ==========================================
+          // BUKA APLIKASI PERIZINAN
+          // ==========================================
+
+          const tujuan =
+
+            APP_URL +
+
+            '?id=' +
+
+            encodeURIComponent(
+              idSantri
+            );
+
+
+          setTimeout(function() {
+
+            window.location.href =
+              tujuan;
+
+          }, 700);
+
+        },
+
+
+        // ============================================
+        // ERROR SCAN
+        // ============================================
+
+        function(errorMessage) {
+
+          // Jangan tampilkan error.
+          // Fungsi ini dipanggil berkali-kali
+          // selama kamera sedang mencari QR.
+
+        }
+
+      );
+
+
+      scannerAktif = true;
+
+
+      document.getElementById(
+        'btnMulai'
+      ).style.display =
+        'none';
+
+
+      document.getElementById(
+        'btnStop'
+      ).style.display =
+        'block';
+
+
+      tampilkanHasil(
+
+        '<div class="info">' +
+
+        '📷 Kamera aktif.<br>' +
+
+        'Arahkan kamera ke QR santri.' +
+
+        '</div>'
+
+      );
+
+    }
+
+
+    catch (error) {
+
+      console.error(
+        'Scanner error:',
+        error
+      );
+
+
+      scannerAktif = false;
+
+      scanner = null;
+
+
+      tampilkanHasil(
+
+        '<div class="danger">' +
+
+        '<b>❌ Kamera tidak dapat dibuka.</b>' +
+
+        '<p>' +
+
+        '<b>Error:</b> ' +
+
+        error.name +
+
+        '</p>' +
+
+        '<p>' +
+
+        error.message +
+
+        '</p>' +
+
+        '<p>' +
+
+        'Pastikan browser mengizinkan kamera ' +
+
+        'untuk halaman ini.' +
+
+        '</p>' +
+
+        '</div>'
+
+      );
+
+    }
+
+  }
+
+
+  // ==================================================
+  // STOP SCANNER
+  // ==================================================
+
+  async function stopScanner() {
+
+    if (!scanner) {
+      return;
+    }
+
+
+    try {
+
+      if (scannerAktif) {
+
+        await scanner.stop();
+
+      }
+
+    }
+
+    catch (error) {
+
+      console.log(
+        'Scanner stop:',
+        error
+      );
+
+    }
+
+
+    try {
+
+      await scanner.clear();
+
+    }
+
+    catch (error) {
+
+      console.log(
+        'Scanner clear:',
+        error
+      );
+
+    }
+
+
+    scanner = null;
+
+    scannerAktif = false;
+
+
+    document.getElementById(
+      'btnMulai'
+    ).style.display =
+      'block';
+
+
+    document.getElementById(
+      'btnStop'
+    ).style.display =
+      'none';
+
+  }
+
+</script>
+
+</body>
+</html>
